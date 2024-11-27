@@ -1,8 +1,8 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { padronizedHash } from "../../util/hash";
-import  jwt  from "jsonwebtoken";
 
 const generateJWT = (user: any) => {
     const payload = {
@@ -11,11 +11,10 @@ const generateJWT = (user: any) => {
     };
 
     const secretKey = process.env.JWT_SECRET_KEY || 'your-secret-key';
-    const token = jwt.sign(payload, secretKey, { expiresIn: '1h' }); // Gera o token
+    const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
 
     return token;
 };
-
 
 const validateHash = (salt: string, storedHashedPassword:string, password: string) => {
   
@@ -28,29 +27,41 @@ const validateHash = (salt: string, storedHashedPassword:string, password: strin
     return false
 }
 
-export async function POST (request: NextRequest){
-    
-    try{
-        const body = await request.json()
-        const { email, password } = body
-
-        const user = await prisma.user.findUnique({where:{email}})
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const { email, password } = body;
+        //verificação zod
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
 
         if (!user) {
-            return new NextResponse('User not found', { status: 404 })
+            return new NextResponse(JSON.stringify({ error: 'User not found' }), { status: 404 });
+
         }
 
-        const validatedPassword = validateHash(user.salt, user.hashedPassword, password)
+        const isPasswordValid = validateHash(user.salt, user.hashedPassword, password);
 
-        if(!validatedPassword){
-            return new NextResponse('Invalid credentials', { status: 401 })
+        if (!isPasswordValid) {
+            return new NextResponse(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
+
         }
+
         const token = generateJWT(user);
-        
-        return new NextResponse(JSON.stringify({ token }), { status: 200 });
-    } catch (err) {
-        console.error(err);
-        return new NextResponse('Error during login', { status: 500 });
-    }
 
+        // Configurando o cookie com o token JWT
+        const response = new NextResponse(JSON.stringify({ success: true }), { status: 200 });
+        response.cookies.set('access_token', token, {
+            httpOnly: true, // Impede acesso ao cookie via JavaScript (proteção contra XSS)
+            secure: process.env.NODE_ENV === 'production', // Apenas HTTPS no ambiente de produção
+            sameSite: 'strict', // Previne envio em requisições cross-site (proteção contra CSRF)
+            maxAge: 60 * 60 // 1 hora
+        });
+
+        return response;
+    } catch (err) {
+        return new NextResponse(JSON.stringify({ error: 'Error during login' }), { status: 500 });
+
+    }
 }
