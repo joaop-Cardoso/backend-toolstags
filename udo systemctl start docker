@@ -1,0 +1,21 @@
+[0;1;32m●[0m docker.service - Docker Application Container Engine
+     Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
+     Active: [0;1;32mactive (running)[0m since Thu 2024-11-07 13:22:01 -03; 33min ago
+TriggeredBy: [0;1;32m●[0m docker.socket
+       Docs: https://docs.docker.com
+   Main PID: 569 (dockerd)
+      Tasks: 13
+     Memory: 81.6M
+     CGroup: /system.slice/docker.service
+             └─569 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.090925300-03:00" level=info msg="Default bridge (docker0) is assigned with an IP address 172.17.0.0/16. Daemon option --bip can be used to set a preferred IP address"
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.160933500-03:00" level=info msg="Loading containers: done."
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.210273700-03:00" level=warning msg="WARNING: No blkio throttle.read_bps_device support"
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.210306800-03:00" level=warning msg="WARNING: No blkio throttle.write_bps_device support"
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.210317800-03:00" level=warning msg="WARNING: No blkio throttle.read_iops_device support"
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.210328600-03:00" level=warning msg="WARNING: No blkio throttle.write_iops_device support"
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.210361200-03:00" level=info msg="Docker daemon" commit=41ca978 containerd-snapshotter=false storage-driver=overlay2 version=27.3.1
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.211817700-03:00" level=info msg="Daemon has completed initialization"
+Nov 07 13:22:01 SA18741 systemd[1]: Started Docker Application Container Engine.
+Nov 07 13:22:01 SA18741 dockerd[569]: time="2024-11-07T13:22:01.358363000-03:00" level=info msg="API listen on /run/docker.sock"

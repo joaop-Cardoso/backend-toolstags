@@ -12,3 +12,33 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  salt      String
+  hashedPassword  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tool {
+  id   Int    @id @default(autoincrement())
+  name String
+  ToolTags ToolTags[]
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  ToolTags ToolTags[]
+}
+
+model ToolTags {
+  toolId Int
+  tagId  Int
+  tool   Tool @relation(fields: [toolId], references: [id])
+  tag    Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([toolId, tagId])
+}

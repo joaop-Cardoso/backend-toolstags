@@ -3,8 +3,8 @@ services:
   postgres:
     image: postgres
     environment:
-      POSTGRES_USER: your_username
-      POSTGRES_PASSWORD: your_password
-      POSTGRES_DB: your_database
+      POSTGRES_USER: joao
+      POSTGRES_PASSWORD: fewqfw43f43gg3
+      POSTGRES_DB: treino
     ports:
       - "5432:5432"

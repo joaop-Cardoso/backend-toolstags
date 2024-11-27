@@ -1,0 +1,22 @@
+
+
+ENV:
+#USER:PASSWORD@HOST:PORT/DATABASE?schema=SCHEMA
+DATABASE_URL="postgresql://user:password@localhost:port/database?schema=schema"
+
+docker-compose.yml:
+version: '3.8'
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dbname
+    ports:
+      - "portnumber:portnumber"
+
+npx prisma migrate dev --name sua_descricao (migrations ficam salvas na pasta do prisma)
+
+Sempre que você altera o seu schema.prisma (adicionando novos modelos, campos, ou fazendo outras mudanças no schema),
+ você precisa rodar o npx prisma generate no console para que as alterações no schema sejam refletidas no código do Prisma Client.
