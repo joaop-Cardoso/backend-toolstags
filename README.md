@@ -1,5 +1,6 @@
-Precisa do docker instalado
-to com preguiça de escreve o resto
+1 - Instalar docker
+2 - Instalar projeto com npm install
+3 - Instalar Cypress pra rodar os testes
 
 
 
