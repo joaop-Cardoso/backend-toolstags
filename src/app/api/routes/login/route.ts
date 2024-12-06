@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { padronizedHash } from "../../util/hash";
+import { z } from "zod";
 
 const generateJWT = (user: any) => {
     const payload = {
@@ -27,31 +28,46 @@ const validateHash = (salt: string, storedHashedPassword:string, password: strin
     return false
 }
 
+const LoginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(1, "Password is required"),
+});
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { email, password } = body;
-        //verificação zod
+        
+        const parsedBody = LoginSchema.safeParse(body);
+        if (!parsedBody.success) {
+            return new NextResponse(
+                JSON.stringify({ error: "Invalid request body", issues: parsedBody.error.errors }),
+                { status: 400 }
+            );
+        }
+
         const user = await prisma.user.findUnique({
             where: { email }
         });
 
         if (!user) {
             return new NextResponse(JSON.stringify({ error: 'User not found' }), { status: 404 });
-
         }
 
         const isPasswordValid = validateHash(user.salt, user.hashedPassword, password);
 
         if (!isPasswordValid) {
             return new NextResponse(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
-
         }
 
         const token = generateJWT(user);
 
         // Configurando o cookie com o token JWT
-        const response = new NextResponse(JSON.stringify({ success: true }), { status: 200 });
+        const response = new NextResponse(JSON.stringify({ success: true }), { status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+            }
+         });
         response.cookies.set('access_token', token, {
             httpOnly: true, // Impede acesso ao cookie via JavaScript (proteção contra XSS)
             secure: process.env.NODE_ENV === 'production', // Apenas HTTPS no ambiente de produção
