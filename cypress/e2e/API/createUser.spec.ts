@@ -68,4 +68,87 @@ describe('API User Creation Tests', () => {
         expect(response.status).to.eq(500);
       });
     });
+
+    it('should return an error when password is too short', () => {
+      const invalidUser = {
+        email: `test${Date.now()}@example.com`,
+        password: '12345',
+      };
+  
+      cy.request({
+        method: 'POST',
+        url: apiUrl,
+        body: invalidUser,
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.eq(400);
+        expect(response.body).to.have.property(
+          'error', 'Password must be at least 6 characters long'
+        );
+      });
+    });
+  
+    it('should return an error when email is not a valid format', () => {
+      const invalidUser = {
+        email: 'invalidemail',
+        password: 'validPassword123',
+      };
+  
+      cy.request({
+        method: 'POST',
+        url: apiUrl,
+        body: invalidUser,
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.eq(400);
+        expect(response.body).to.have.property('error', 'Invalid email format');
+      });
+    });
+  
+    it('should return an error when no data is provided', () => {
+      cy.request({
+        method: 'POST',
+        url: apiUrl,
+        body: {},
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.eq(400);
+        expect(response.body.error).to.eq('Email and password are required');
+      });
+    });
+  
+    it('should return an error when email is null', () => {
+      const invalidUser = {
+        email: null,
+        password: 'password123',
+      };
+  
+      cy.request({
+        method: 'POST',
+        url: apiUrl,
+        body: invalidUser,
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.eq(400);
+        expect(response.body).to.have.property(
+           "error", "Email and password are required"
+        );
+      });
+    });
+  
+    it('should return an error when password is missing', () => {
+      const invalidUser = {
+        email: `test${Date.now()}@example.com`,
+      };
+  
+      cy.request({
+        method: 'POST',
+        url: apiUrl,
+        body: invalidUser,
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.eq(400);
+        expect(response.body.error).to.eq('Email and password are required');
+      });
+    });
   });

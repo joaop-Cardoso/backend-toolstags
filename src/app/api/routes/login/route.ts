@@ -28,15 +28,15 @@ const validateHash = (salt: string, storedHashedPassword:string, password: strin
     return false
 }
 
-const LoginSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(1, "Password is required"),
-});
-
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { email, password } = body;
+    
+        const LoginSchema = z.object({
+            email: z.string().email(),
+            password: z.string().min(6, "Password is required"),
+        });
         
         const parsedBody = LoginSchema.safeParse(body);
         if (!parsedBody.success) {
