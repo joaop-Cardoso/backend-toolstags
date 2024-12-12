@@ -102,4 +102,76 @@ describe('API user login tests', () => {
             expect(response.status).to.eq(405);
         });
     });
+
+    it('Should fail with password shorter than minimum length', () => {
+        cy.request({
+            method: 'POST',
+            url: apiUrl,
+            body: {
+                email: existingUser.email,
+                password: '123' // senha curta
+            },
+            failOnStatusCode: false,
+        }).then((response) => {
+            expect(response.status).to.eq(400);
+            expect(response.body).to.have.property('error', 'Invalid request body');
+        });
+    });
+
+    it('Should fail with incorrect data types in payload', () => {
+        cy.request({
+            method: 'POST',
+            url: apiUrl,
+            body: {
+                email: 12345, // Tipo errado (número)
+                password: {} // Tipo errado (objeto)
+            },
+            failOnStatusCode: false,
+        }).then((response) => {
+            expect(response.status).to.eq(400);
+            expect(response.body).to.have.property('error', 'Invalid request body');
+        });
+    });
+
+    it('Should fail without Content-Type header', () => {
+        cy.request({
+            method: 'POST',
+            url: apiUrl,
+            body: existingUser,
+            headers: { 'Content-Type': '' }, // Cabeçalho ausente
+            failOnStatusCode: false,
+        }).then((response) => {
+            expect(response.status).to.eq(400);
+            expect(response.body).to.have.property('error', 'The content type for the solicitation must be specified');
+        });
+    });
+    
+    it('Should return 400 when no body is sent', () => {
+        cy.request({
+            method: 'POST',
+            url: apiUrl,
+            body: {}, // Sem campos
+            failOnStatusCode: false,
+        }).then((response) => {
+            expect(response.status).to.eq(400);
+            expect(response.body).to.have.property('error', 'Invalid request body');
+        });
+    });
+
+    it('Should not expose detailed error messages in production', () => {
+        cy.request({
+            method: 'POST',
+            url: apiUrl,
+            body: {
+                email: 'malicious@example.com',
+                password: 'maliciouspassword'
+            },
+            failOnStatusCode: false,
+        }).then((response) => {
+            if (Cypress.env('NODE_ENV') === 'production') {
+                expect(response.status).to.be.oneOf([400, 401, 404]);
+                expect(response.body).not.to.have.property('issues'); // Não expor detalhes
+            }
+        });
+    });
 });

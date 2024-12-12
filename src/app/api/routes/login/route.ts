@@ -1,9 +1,9 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { padronizedHash } from "../../util/hash";
 import { z } from "zod";
+import { emitWarning } from "process";
 
 const generateJWT = (user: any) => {
     const payload = {
@@ -28,30 +28,40 @@ const validateHash = (salt: string, storedHashedPassword:string, password: strin
     return false
 }
 
+const LoginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+});
+
 export async function POST(request: NextRequest) {
     try {
+        if (!request.headers.get('Content-Type')) {
+            return new NextResponse(
+                JSON.stringify({ error: "The content type for the solicitation must be specified" }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
         const body = await request.json();
         const { email, password } = body;
-    
-        const LoginSchema = z.object({
-            email: z.string().email(),
-            password: z.string().min(6, "Password is required"),
-        });
         
         const parsedBody = LoginSchema.safeParse(body);
         if (!parsedBody.success) {
             return new NextResponse(
                 JSON.stringify({ error: "Invalid request body", issues: parsedBody.error.errors }),
-                { status: 400 }
+                { status: 400, headers:{
+                    'Content-Type':'application/json',
+                }}
             );
-        }
+        } 
 
         const user = await prisma.user.findUnique({
             where: { email }
         });
 
         if (!user) {
-            return new NextResponse(JSON.stringify({ error: 'User not found' }), { status: 404 });
+            return new NextResponse(JSON.stringify({ error: 'User not found' }), { status: 404, headers:{
+                'Content-Type':'application/json'
+            } });
         }
 
         const isPasswordValid = validateHash(user.salt, user.hashedPassword, password);
@@ -68,6 +78,7 @@ export async function POST(request: NextRequest) {
                 'Content-Type': 'application/json',
             }
          });
+         response.cookies.set
         response.cookies.set('access_token', token, {
             httpOnly: true, // Impede acesso ao cookie via JavaScript (proteção contra XSS)
             secure: process.env.NODE_ENV === 'production', // Apenas HTTPS no ambiente de produção
