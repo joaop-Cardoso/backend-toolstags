@@ -42,3 +42,11 @@ model ToolTags {
 
   @@id([toolId, tagId])
 }
+
+model Session {
+  id          Int   @id @default(autoincrement())
+  user        String @unique
+  acessToken  String
+  createdAt   DateTime
+  ExpirationTime DateTime
+}

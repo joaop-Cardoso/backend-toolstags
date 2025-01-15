@@ -1,28 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateToken } from "../../util/validateToken";
+import { validateToken } from "../../../util/validateToken";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 
-
 const toolsSchema = z.object({
-    name: z.string().max(20).min(1)
+    tools: z.array(
+        z.object({
+            name: z.string().max(20).min(1),
+        })
+    ),
 });
 
-const createData = async (data: any) => {
+const createData = async (input: { tools: { name: string }[] }) => {
     try {
-        const upcasedName = data.name.charAt(0).toUpperCase() + data.name.slice(1);
-        const createdTool = await prisma.tool.create({
-            data: {
-                name: upcasedName
-            }
-        })
+        // Validar o input com Zod
+        toolsSchema.parse(input);
 
-        return createdTool
+        // Processar os dados
+        const upcasedData = input.tools.map((item) => ({
+            ...item,
+            name: item.name.charAt(0).toUpperCase() + item.name.slice(1),
+        }));
+
+        // Criar os registros no banco
+        const createdTags = await prisma.tool.createMany({
+            data: upcasedData,
+        });
+
+        return createdTags;
     } catch (error: any) {
-        throw new Error("Couldn't create new data")
+        throw new Error("Couldn't create new data");
     }
-}
-
+};
 export async function POST(request: NextRequest) {
     const token = request.cookies.get('access_token')?.value;
 
@@ -42,7 +51,7 @@ export async function POST(request: NextRequest) {
             "error": {
                 "code": "401",
                 "message": "User integrity conflict",
-                "details": "The current acess token does not match the user's granted"
+                "details": "The current acess token not match the user's granted"
             }
         }, { status: 401 })
     }
@@ -61,16 +70,4 @@ export async function POST(request: NextRequest) {
 
     const createdData = await createData(body)
     return NextResponse.json({ success: true, body: body });
-}
-
-export async function GET() {
-    try {
-        const toolsData = await prisma.tool.findMany()
-        if (toolsData.length === 0) {
-            return NextResponse.json({ success: true, message: 'No tools found' });
-        }
-        return NextResponse.json({ success: true, body: toolsData })
-    } catch (error: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
 }

@@ -12,6 +12,7 @@ describe('API user login tests', () => {
             body: existingUser,
             failOnStatusCode: false,
         }).then((response) => {
+            console.log(process.env.NODE_ENV)
             expect(response.status).to.eq(200);
             expect(response.body).to.have.property('success', true);
         });

@@ -8,7 +8,6 @@ import { z, ZodError } from "zod";
 
 const createData = async (data: any) => {
     try {
-
         const saltedHashedPassword = passwordEncrypt(data.password);
         const fullData = await prisma.user.create({
             data: {
