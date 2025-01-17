@@ -2,34 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 const getData = async (ExternalId: number) => {
-  const tool = await prisma.tool.findUnique({
+  const tag = await prisma.tag.findUnique({
     where: { id: ExternalId },
     include: {
       ToolTags: {
         select: {
-          tag: true, // Inclui as tags relacionadas
+          tool: true, // Inclui as ferramentas relacionadas
         },
       },
     },
   });
 
-  if (!tool) {
-    throw new Error(`Tool with id ${ExternalId} not found.`);
+  if (!tag) {
+    throw new Error(`Tag with id ${ExternalId} not found.`);
   }
 
-  // Formata os dados para incluir as tags diretamente no resultado
-  const formattedTool = {
-    id: tool.id,
-    name: tool.name,
-    tags: tool.ToolTags.length > 0 ? tool.ToolTags.map(toolTag => toolTag.tag) : undefined, // Inclui tags somente se houver
+  // Formata os dados para incluir as ferramentas diretamente no resultado
+  const formattedTag = {
+    id: tag.id,
+    name: tag.name,
+    tools: tag.ToolTags.length > 0 ? tag.ToolTags.map(toolTag => toolTag.tool) : undefined, // Inclui ferramentas somente se houver
   };
 
-  // Remove a chave 'tags' se não houver tags associadas
-  if (!formattedTool.tags) {
-    delete formattedTool.tags;
+  // Remove a chave 'tools' se não houver ferramentas associadas
+  if (!formattedTag.tools) {
+    delete formattedTag.tools;
   }
 
-  return formattedTool;
+  return formattedTag;
 };
 
 export async function GET(request: NextRequest) {
@@ -101,14 +101,14 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    const existingTool = await prisma.tool.findUnique({ where: { id: idNumber } });
+    const existingTag = await prisma.tag.findUnique({ where: { id: idNumber } });
 
-    if (!existingTool) {
+    if (!existingTag) {
       return NextResponse.json(
         {
           error: {
             code: "404",
-            message: `Tool with id ${idNumber} not found.`,
+            message: `Tag with id ${idNumber} not found.`,
             details: "Could not find the requested resource.",
           },
         },
@@ -116,12 +116,12 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedTool = await prisma.tool.update({
+    const updatedTag = await prisma.tag.update({
       where: { id: idNumber },
       data: { name: body.name },
     });
 
-    return NextResponse.json({ data: updatedTool });
+    return NextResponse.json({ data: updatedTag });
   } catch (error: any) {
     return NextResponse.json(
       {
@@ -155,14 +155,14 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const existingTool = await prisma.tool.findUnique({ where: { id: idNumber } });
+    const existingTag = await prisma.tag.findUnique({ where: { id: idNumber } });
 
-    if (!existingTool) {
+    if (!existingTag) {
       return NextResponse.json(
         {
           error: {
             code: "404",
-            message: `Tool with id ${idNumber} not found.`,
+            message: `Tag with id ${idNumber} not found.`,
             details: "Could not find the requested resource.",
           },
         },
@@ -170,10 +170,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await prisma.tool.delete({ where: { id: idNumber } });
+    await prisma.tag.delete({ where: { id: idNumber } });
 
     return NextResponse.json({
-      message: `Tool with id ${idNumber} successfully deleted.`,
+      message: `Tag with id ${idNumber} successfully deleted.`,
     });
   } catch (error: any) {
     return NextResponse.json(

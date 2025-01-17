@@ -16,7 +16,7 @@ services:
     ports:
       - "portnumber:portnumber"
 
-npx prisma migrate dev --name sua_descricao (migrations ficam salvas na pasta do prisma)
 
 Sempre que você altera o seu schema.prisma (adicionando novos modelos, campos, ou fazendo outras mudanças no schema),
  você precisa rodar o npx prisma generate no console para que as alterações no schema sejam refletidas no código do Prisma Client.
+ Depois npx prisma migrate dev --name sua_descricao (migrations ficam salvas na pasta do prisma)

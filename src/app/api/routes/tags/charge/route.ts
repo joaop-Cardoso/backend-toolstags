@@ -3,7 +3,7 @@ import { validateToken } from "../../../util/validateToken";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 
-const toolsSchema = z.object({
+const tagsSchema = z.object({
     tools: z.array(
         z.object({
             name: z.string().max(20).min(1),
@@ -13,14 +13,14 @@ const toolsSchema = z.object({
 
 const createData = async (input: { tools: { name: string }[] }) => {
     try {
-        toolsSchema.parse(input);
+        tagsSchema.parse(input);
 
         const upcasedData = input.tools.map((item) => ({
             ...item,
             name: item.name.charAt(0).toUpperCase() + item.name.slice(1),
         }));
 
-        const createdTags = await prisma.tool.createMany({
+        const createdTags = await prisma.tag.createMany({
             data: upcasedData,
         });
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validatedBody = toolsSchema.safeParse(body)
+    const validatedBody = tagsSchema.safeParse(body)
     if (!validatedBody.success) {
         return NextResponse.json({
             "error": {

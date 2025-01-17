@@ -35,12 +35,13 @@ model Tag {
 }
 
 model ToolTags {
+  id Int @id @default(autoincrement())
   toolId Int
   tagId  Int
+  toolName String
+  tagName String
   tool   Tool @relation(fields: [toolId], references: [id])
   tag    Tag  @relation(fields: [tagId], references: [id])
-
-  @@id([toolId, tagId])
 }
 
 model Session {
