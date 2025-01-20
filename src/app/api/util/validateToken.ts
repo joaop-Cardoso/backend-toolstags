@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { NextResponse } from 'next/server';
+
 
 export async function validateToken(token: any): Promise<boolean> {
     const secretKey = process.env.JWT_SECRET_KEY;

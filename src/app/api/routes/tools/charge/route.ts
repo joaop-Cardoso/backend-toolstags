@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateToken } from "../../../util/validateToken";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { authMiddleware } from "@/app/api/util/authMiddleware";
 
 const toolsSchema = z.object({
     tools: z.array(
@@ -30,28 +31,9 @@ const createData = async (input: { tools: { name: string }[] }) => {
     }
 };
 export async function POST(request: NextRequest) {
-    const token = request.cookies.get('access_token')?.value;
-
-    if (!token) {
-        return NextResponse.json({
-            "error": {
-                "code": "401",
-                "message": "Token not found",
-                "details": "The acess token is not set or expired"
-            }
-        }, { status: 401 })
-    }
-
-    const validToken = await validateToken(token)
-    if (!validToken) {
-        return NextResponse.json({
-            "error": {
-                "code": "401",
-                "message": "User integrity conflict",
-                "details": "The current acess token not match the user's granted"
-            }
-        }, { status: 401 })
-    }
+    
+    const authResponse = await authMiddleware(request);
+    if (authResponse) return authResponse;
 
     const body = await request.json()
     const validatedBody = toolsSchema.safeParse(body)

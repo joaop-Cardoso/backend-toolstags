@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { authMiddleware } from "@/app/api/util/authMiddleware";
 
 const getData = async (ExternalId: number) => {
   const tool = await prisma.tool.findUnique({
@@ -33,6 +34,10 @@ const getData = async (ExternalId: number) => {
 };
 
 export async function GET(request: NextRequest) {
+
+  const authResponse = await authMiddleware(request);
+  if (authResponse) return authResponse;
+
   const partitionedUrl = request.nextUrl.pathname.split('/');
   const id = partitionedUrl[partitionedUrl.length - 1];
   const idNumber = +id;
@@ -68,6 +73,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  
+  const authResponse = await authMiddleware(request);
+  if (authResponse) return authResponse;
+
   const partitionedUrl = request.nextUrl.pathname.split('/');
   const id = partitionedUrl[partitionedUrl.length - 1];
   const idNumber = +id;
@@ -137,6 +146,10 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+
+  const authResponse = await authMiddleware(request);
+  if (authResponse) return authResponse;
+
   const partitionedUrl = request.nextUrl.pathname.split('/');
   const id = partitionedUrl[partitionedUrl.length - 1];
   const idNumber = +id;

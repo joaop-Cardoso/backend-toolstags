@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+/*import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
 const secretKey = process.env.JWT_SECRET_KEY || 'your-secret-key';
@@ -31,4 +31,24 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: ['/api/protected-route'], // Define quais rotas o middleware protege
-};
+}; */
+
+
+
+
+
+
+
+
+
+/*
+
+import type { NextRequest } from 'next/server'
+ 
+export function middleware(request: NextRequest) {
+    console.log("oieeeeee sou o middleware seu amiguinho")
+}
+
+export const config = {
+    matcher: ['/api/:path*'], // Inclui todas as rotas dentro de /api
+  };*/

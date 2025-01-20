@@ -3,6 +3,7 @@ import { validateToken } from "../../util/validateToken";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { authMiddleware } from "../../util/authMiddleware";
 
 const toolTagsSchema = z.object({
     toolId: z.number().min(1).max(99999).positive(),
@@ -118,29 +119,10 @@ const updateData = async (jsonId: number, jsonToolId: number, jsonTagId: number)
 }
 
 export async function POST(request: NextRequest) {
-    const token = request.cookies.get('access_token')?.value;
-
-    if (!token) {
-        return NextResponse.json({
-            "error": {
-                "code": "401",
-                "message": "Token not found",
-                "details": "The access token is not set or expired"
-            }
-        }, { status: 401 });
-    }
-
-    const validToken = await validateToken(token);
-    if (!validToken) {
-        return NextResponse.json({
-            "error": {
-                "code": "401",
-                "message": "User integrity conflict",
-                "details": "The current access token does not match the user's granted"
-            }
-        }, { status: 401 });
-    }
-
+       
+    const authResponse = await authMiddleware(request);
+    if (authResponse) return authResponse;
+   
     const body = await request.json();
     const validatedBody = toolTagsSchema.safeParse(body);
     if (!validatedBody.success) {
@@ -167,7 +149,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, body: createdData.data });
 }
 
-export async function GET() {
+export async function GET(request:NextRequest) {
+    
+    const authResponse = await authMiddleware(request);
+    if (authResponse) return authResponse;
+  
     try {
         const tooltagsData = await prisma.toolTags.findMany();
         if (tooltagsData.length === 0) {
@@ -180,6 +166,10 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+    
+    const authResponse = await authMiddleware(request);
+    if (authResponse) return authResponse;
+  
     try {
         const body = await request.json()
         const { id, toolId, tagId } = body
@@ -211,8 +201,11 @@ export async function PUT(request: NextRequest) {
     }
 }
 
-export async function DELETE (request: NextRequest)
-{
+export async function DELETE (request: NextRequest){
+        
+  const authResponse = await authMiddleware(request);
+  if (authResponse) return authResponse;
+
     const body = await request.json()
     const ToolTags = await prisma.toolTags.delete({
         where: {
