@@ -4,7 +4,7 @@ import { validateToken } from "../util/validateToken";
 // Middleware para validar o token
 export const authMiddleware = async (request: NextRequest) => {
   const token = request.cookies.get("access_token")?.value;
-  console.log("oieeeeee sou middlewareeee")
+
   if (!token) {
     return NextResponse.json(
       {
