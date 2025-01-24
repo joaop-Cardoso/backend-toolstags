@@ -23,8 +23,8 @@ model User {
 }
 
 model Tool {
-  id   Int    @id @default(autoincrement())
-  name String
+  id   Int       @id @default(autoincrement())
+  name String    @unique
   ToolTags ToolTags[]
 }
 

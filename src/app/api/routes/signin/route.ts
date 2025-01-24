@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
             password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
         });
 
-        const parsedBody = userSchema.parse(body);
-        const data = await createData(body);
+        userSchema.parse(body);
+        await createData(body);
 
         return new NextResponse(
             JSON.stringify({ message: 'User created successfully' }),
@@ -93,30 +93,27 @@ export async function POST(request: NextRequest) {
 
         if (err instanceof ZodError) {
             console.log(err.issues)
-            if(err.issues[0].code === "invalid_string")
-            {
+            if (err.issues[0].code === "invalid_string") {
+                return NextResponse.json(
+                    { error: 'Invalid email format' }, {
+                    status: 400
+                })
+            }
+            if (err.issues[0].code === "too_small") {
                 return new NextResponse(
-                    JSON.stringify({error: 'Invalid email format'}),{
-                        status:400
+                    JSON.stringify({ error: 'Password must be at least 6 characters long' }), {
+                    status: 400,
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
+                }
                 )
             }
-            if(err.issues[0].code === "too_small")
-                {
-                    return new NextResponse(
-                        JSON.stringify({error: 'Password must be at least 6 characters long'}),{
-                            status:400,
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    )
-                }
         }
     }
 
     return new NextResponse(
-        JSON.stringify({ error: 'An unexpected error occurred during user creation'}),
+        JSON.stringify({ error: 'An unexpected error occurred during user creation' }),
         {
             status: 500,
             headers: {

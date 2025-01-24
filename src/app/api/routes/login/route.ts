@@ -33,28 +33,39 @@ const LoginSchema = z.object({
     password: z.string().min(6),
 });
 
+const sessionRefresh = async (email: string) => {
+    const verifySession = await prisma.session.findUnique({
+        where: { user: email }
+    })
+    if (verifySession) {
+        const deletedSession = await prisma.session.delete({
+            where: {
+                user: email,
+            },
+        })
+    }
+}
 const createSession = async (userEmail: string, token: any) => {
     try {
         const decodedToken = jwt.decode(token);
-        if(!decodedToken)
-        {
+        if (!decodedToken) {
             return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
 
         if (typeof decodedToken === 'object' && decodedToken !== null && 'iat' in decodedToken && 'exp' in decodedToken) {
             const sessionCreate = await prisma.session.create({
-              data: {
-                user: userEmail,
-                acessToken: token,
-                createdAt: new Date(decodedToken.iat! * 1000),
-                ExpirationTime: new Date(decodedToken.exp! * 1000)
-              },
+                data: {
+                    user: userEmail,
+                    acessToken: token,
+                    createdAt: new Date(decodedToken.iat! * 1000),
+                    ExpirationTime: new Date(decodedToken.exp! * 1000)
+                },
             });
             return sessionCreate
-          }
-        } catch (error: unknown) {
-            throw error
         }
+    } catch (error: unknown) {
+        throw error
+    }
 }
 
 export async function POST(request: NextRequest) {
@@ -67,6 +78,7 @@ export async function POST(request: NextRequest) {
         }
         const body = await request.json();
         const { email, password } = body;
+        const refreshSession = sessionRefresh(email)
 
         const parsedBody = LoginSchema.safeParse(body);
         if (!parsedBody.success) {
@@ -116,7 +128,7 @@ export async function POST(request: NextRequest) {
             maxAge: 60 * 60// 1 hora
         });
 
-        const sessionCreate = createSession(user.email, token)
+        createSession(user.email, token)
 
         return response;
     } catch (err) {

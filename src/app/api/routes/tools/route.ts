@@ -19,10 +19,10 @@ const createData = async (data: any) => {
         name: upcasedName,
         ToolTags: data.tags
           ? {
-              create: data.tags.map((tagId: number) => ({
-                tag: { connect: { id: tagId } },
-              })),
-            }
+            create: data.tags.map((tagId: number) => ({
+              tag: { connect: { id: tagId } },
+            })),
+          }
           : undefined,
       },
       include: {
@@ -41,7 +41,8 @@ const createData = async (data: any) => {
       tags: createdTool.ToolTags.map(toolTag => toolTag.tag),
     };
   } catch (error: any) {
-    throw new Error("Couldn't create new data");
+    console.error("Erro ao criar a ferramenta:", error); // Log detalhado
+    throw new Error("Couldn't create new data: " + error.message); // Mensagem com o erro original
   }
 };
 
@@ -49,8 +50,9 @@ export async function POST(request: NextRequest) {
 
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
-  
+
   const body = await request.json();
+  console.log(body)
   const validatedBody = toolsSchema.safeParse(body);
   if (!validatedBody.success) {
     return NextResponse.json(
@@ -82,11 +84,11 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-export async function GET(request:NextRequest) {
-  
+export async function GET(request: NextRequest) {
+
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
-  
+
   try {
     const toolsData = await prisma.tool.findMany({
       include: {
