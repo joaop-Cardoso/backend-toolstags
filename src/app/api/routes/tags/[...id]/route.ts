@@ -34,7 +34,7 @@ const getData = async (ExternalId: number) => {
 };
 
 export async function GET(request: NextRequest) {
-    
+
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
 
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-    
+
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
 
@@ -146,7 +146,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-    
+
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
 
@@ -182,6 +182,21 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const existingToolTag = await prisma.toolTags.findMany({
+      where: {
+        tagId: existingTag.id
+      }
+    })
+
+    if (existingToolTag) {
+      await prisma.toolTags.deleteMany({
+        where: {
+          tagId: existingTag.id
+        }
+      })
+    }
+
 
     await prisma.tag.delete({ where: { id: idNumber } });
 
