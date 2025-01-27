@@ -13,35 +13,51 @@ const createData = async (data: any) => {
   try {
     const upcasedName = data.name.charAt(0).toUpperCase() + data.name.slice(1);
 
-    // Criação da tag com os relacionamentos intermediários ToolTags
+    // Criação da Tag com os relacionamentos intermediários ToolTags
     const createdTag = await prisma.tag.create({
       data: {
         name: upcasedName,
-        ToolTags: data.tools
-          ? {
-              create: data.tools.map((toolId: number) => ({
-                tool: { connect: { id: toolId } },
-              })),
-            }
-          : undefined,
+        ToolTags: {
+          create: await Promise.all(
+            data.tools.map(async (toolId: number) => {
+              const tool = await prisma.tool.findUnique({
+                where: { id: toolId },
+                select: { name: true },
+              });
+
+              if (!tool) {
+                throw new Error(`Tool ID ${toolId} not found.`);
+              }
+
+              return {
+                toolId, // Conecta ao ID da Tool
+                toolName: tool.name, // Usa o nome da Tool buscado
+                tagName: upcasedName, // Usa o nome da Tag
+              };
+            })
+          ),
+        },
       },
       include: {
         ToolTags: {
           select: {
-            tool: true, // Inclui apenas as ferramentas relacionadas
+            tool: true, // Inclui as Tools relacionadas
           },
         },
       },
     });
 
-    // Formata a resposta para exibir apenas as ferramentas diretamente
+    // Formata a resposta para exibir apenas as tools diretamente
     return {
       id: createdTag.id,
       name: createdTag.name,
       tools: createdTag.ToolTags.map(toolTag => toolTag.tool),
     };
   } catch (error: any) {
-    throw new Error("Couldn't create new data");
+    if (error.code === "P2002" && error.meta?.target?.includes("name")) {
+      throw new Error("Couldnt create new tag, a tag with this name already exists");
+    }
+    throw new Error("Couldn't create new tag: " + error.message); // Mensagem com o erro original
   }
 };
 
@@ -83,43 +99,43 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request:NextRequest) {
-    
+export async function GET(request: NextRequest) {
+
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
 
-    try {
-        const tagsData = await prisma.tag.findMany({
-            include: {
-                ToolTags: {
-                    select: { 
-                        tool: true // Inclui somente as ferramentas
-                    }
-                }
-            }
-        });
-
-        if (tagsData.length === 0) {
-            return NextResponse.json({ success: true, message: 'No tags found' });
+  try {
+    const tagsData = await prisma.tag.findMany({
+      include: {
+        ToolTags: {
+          select: {
+            tool: true // Inclui somente as ferramentas
+          }
         }
+      }
+    });
 
-        // Formata os dados para incluir as ferramentas diretamente no resultado
-        const tagsWithTools = tagsData.map(tag => ({
-            ...tag,
-            tools: tag.ToolTags.length > 0 ? tag.ToolTags.map(toolTag => toolTag.tool) : undefined // Incluir ferramentas somente se houver
-        }));
-
-        // Filtra para remover a chave 'tools' se não houver ferramentas associadas
-        const result = tagsWithTools.map(tag => {
-            const { ToolTags, ...tagWithoutToolTags } = tag;
-            if (!tagWithoutToolTags.tools) {
-                delete tagWithoutToolTags.tools; // Remove a chave 'tools' se estiver vazia
-            }
-            return tagWithoutToolTags;
-        });
-
-        return NextResponse.json({ success: true, body: result });
-    } catch (error: any) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (tagsData.length === 0) {
+      return NextResponse.json({ success: true, message: 'No tags found' });
     }
+
+    // Formata os dados para incluir as ferramentas diretamente no resultado
+    const tagsWithTools = tagsData.map(tag => ({
+      ...tag,
+      tools: tag.ToolTags.length > 0 ? tag.ToolTags.map(toolTag => toolTag.tool) : undefined // Incluir ferramentas somente se houver
+    }));
+
+    // Filtra para remover a chave 'tools' se não houver ferramentas associadas
+    const result = tagsWithTools.map(tag => {
+      const { ToolTags, ...tagWithoutToolTags } = tag;
+      if (!tagWithoutToolTags.tools) {
+        delete tagWithoutToolTags.tools; // Remove a chave 'tools' se estiver vazia
+      }
+      return tagWithoutToolTags;
+    });
+
+    return NextResponse.json({ success: true, body: result });
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

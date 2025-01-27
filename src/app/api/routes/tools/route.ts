@@ -17,23 +17,35 @@ const createData = async (data: any) => {
     const createdTool = await prisma.tool.create({
       data: {
         name: upcasedName,
-        ToolTags: data.tags
-          ? {
-            create: data.tags.map((tagId: number) => ({
-              tag: { connect: { id: tagId } },
-            })),
-          }
-          : undefined,
+        ToolTags: {
+          create: await Promise.all(
+            data.tags.map(async (tagId: number) => {
+              const tag = await prisma.tag.findUnique({
+                where: { id: tagId },
+                select: { name: true },
+              });
+
+              if (!tag) {
+                throw new Error(`Tag ID ${tagId} not found.`);
+              }
+
+              return {
+                tagId, // Conecta ao ID da Tag
+                tagName: tag.name, // Usa o nome da Tag buscado
+                toolName: upcasedName, // Usa o nome do Tool
+              };
+            })
+          ),
+        },
       },
       include: {
         ToolTags: {
           select: {
-            tag: true, // Inclui apenas as tags relacionadas
+            tag: true, // Inclui as Tags relacionadas
           },
         },
       },
     });
-
     // Formata a resposta para exibir apenas as tags diretamente
     return {
       id: createdTool.id,
@@ -41,7 +53,9 @@ const createData = async (data: any) => {
       tags: createdTool.ToolTags.map(toolTag => toolTag.tag),
     };
   } catch (error: any) {
-    console.error("Erro ao criar a ferramenta:", error); // Log detalhado
+    if (error.code === "P2002" && error.meta?.target?.includes("name")) {
+      throw new Error("Couldnt create new data, a tool with this name already exists")
+    }
     throw new Error("Couldn't create new data: " + error.message); // Mensagem com o erro original
   }
 };
@@ -72,6 +86,7 @@ export async function POST(request: NextRequest) {
     const createdData = await createData(validatedBody.data);
     return NextResponse.json({ success: true, body: createdData });
   } catch (error: any) {
+
     return NextResponse.json(
       {
         error: {
