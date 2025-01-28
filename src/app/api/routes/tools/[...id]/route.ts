@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  
+
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
 
@@ -181,6 +181,20 @@ export async function DELETE(request: NextRequest) {
         },
         { status: 404 }
       );
+    }
+
+    const existingToolTag = await prisma.toolTags.findMany({
+      where: {
+        toolId: existingTool.id
+      }
+    })
+
+    if (existingToolTag) {
+      await prisma.toolTags.deleteMany({
+        where: {
+          toolId: existingTool.id
+        }
+      })
     }
 
     await prisma.tool.delete({ where: { id: idNumber } });
