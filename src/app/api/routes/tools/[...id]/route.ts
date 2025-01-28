@@ -73,7 +73,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-
   const authResponse = await authMiddleware(request);
   if (authResponse) return authResponse;
 
@@ -125,10 +124,54 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Atualiza a ferramenta com o novo nome
     const updatedTool = await prisma.tool.update({
       where: { id: idNumber },
       data: { name: body.name },
     });
+
+    if (!body.tags) {
+      return NextResponse.json({ data: updatedTool });
+    }
+
+    if (Array.isArray(body.tags)) {
+      // Remove as associações antigas de ToolTags
+      await prisma.toolTags.deleteMany({
+        where: { toolId: idNumber },
+      });
+
+      // Recria as novas associações com as tags fornecidas
+      const newToolTags = [];
+      for (const tagId of body.tags) {
+        const tag = await prisma.tag.findUnique({ where: { id: tagId } });
+        if (!tag) continue; // Ignora tags inválidas
+
+        // Cria nova associação
+        const newTagAssociation = await prisma.toolTags.create({
+          data: {
+            toolId: idNumber,
+            tagId,
+            toolName: existingTool.name, // Usa o nome da ferramenta já existente
+            tagName: tag.name, // Usa o nome da tag
+          },
+        });
+
+        newToolTags.push(newTagAssociation); // Armazena a nova associação
+      }
+
+      // Busca todas as tags associadas à ferramenta
+      const updatedTags = await prisma.toolTags.findMany({
+        where: { toolId: idNumber },
+        include: { tag: true }, // Inclui os dados da tag
+      });
+
+      return NextResponse.json({
+        data: {
+          tool: updatedTool,
+          tags: updatedTags.map((toolTag) => toolTag.tag), // Retorna as tags associadas
+        },
+      });
+    }
 
     return NextResponse.json({ data: updatedTool });
   } catch (error: any) {
@@ -136,7 +179,7 @@ export async function PUT(request: NextRequest) {
       {
         error: {
           code: "500",
-          message: "Error updating resource",
+          message: "Internal Server Error",
           details: error.message,
         },
       },
