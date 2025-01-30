@@ -13,39 +13,41 @@ const createData = async (data: any) => {
   try {
     const upcasedName = data.name.charAt(0).toUpperCase() + data.name.slice(1);
 
-    // Criação da ferramenta com os relacionamentos intermediários ToolTags
+    // Monta os relacionamentos de ToolTags apenas se data.tags existir e não estiver vazio
+    const toolTagsData = data.tags?.length
+      ? await Promise.all(
+        data.tags.map(async (tagId: number) => {
+          const tag = await prisma.tag.findUnique({
+            where: { id: tagId },
+            select: { name: true },
+          });
+
+          if (!tag) {
+            throw new Error(`Tag ID ${tagId} not found.`);
+          }
+
+          return {
+            tagId,
+            tagName: tag.name,
+            toolName: upcasedName,
+          };
+        })
+      )
+      : [];
+
+    // Criação da ferramenta
     const createdTool = await prisma.tool.create({
       data: {
         name: upcasedName,
-        ToolTags: {
-          create: await Promise.all(
-            data.tags.map(async (tagId: number) => {
-              const tag = await prisma.tag.findUnique({
-                where: { id: tagId },
-                select: { name: true },
-              });
-
-              if (!tag) {
-                throw new Error(`Tag ID ${tagId} not found.`);
-              }
-
-              return {
-                tagId, // Conecta ao ID da Tag
-                tagName: tag.name, // Usa o nome da Tag buscado
-                toolName: upcasedName, // Usa o nome do Tool
-              };
-            })
-          ),
-        },
+        ToolTags: toolTagsData.length ? { create: toolTagsData } : undefined,
       },
       include: {
         ToolTags: {
-          select: {
-            tag: true, // Inclui as Tags relacionadas
-          },
+          select: { tag: true },
         },
       },
     });
+
     // Formata a resposta para exibir apenas as tags diretamente
     return {
       id: createdTool.id,
@@ -54,11 +56,11 @@ const createData = async (data: any) => {
     };
   } catch (error: any) {
     if (error.code === "P2002" && error.meta?.target?.includes("name")) {
-      throw new Error("Couldnt create new data, a tool with this name already exists")
+      throw new Error("Couldnt create new data, a tool with this name already exists");
     }
-    throw new Error("Couldn't create new data: " + error.message); // Mensagem com o erro original
+    throw new Error("Couldn't create new data: " + error.message);
   }
-};
+}
 
 export async function POST(request: NextRequest) {
 

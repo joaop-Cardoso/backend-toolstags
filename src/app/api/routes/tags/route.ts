@@ -13,30 +13,33 @@ const createData = async (data: any) => {
   try {
     const upcasedName = data.name.charAt(0).toUpperCase() + data.name.slice(1);
 
-    // Criação da Tag com os relacionamentos intermediários ToolTags
+    // Monta os relacionamentos de ToolTags apenas se data.tools existir e não estiver vazio
+    const toolTagsData = data.tools?.length
+      ? await Promise.all(
+        data.tools.map(async (toolId: number) => {
+          const tool = await prisma.tool.findUnique({
+            where: { id: toolId },
+            select: { name: true },
+          });
+
+          if (!tool) {
+            throw new Error(`Tool ID ${toolId} not found.`);
+          }
+
+          return {
+            toolId,
+            toolName: tool.name,
+            tagName: upcasedName,
+          };
+        })
+      )
+      : [];
+
+    // Criação da tag
     const createdTag = await prisma.tag.create({
       data: {
         name: upcasedName,
-        ToolTags: {
-          create: await Promise.all(
-            data.tools.map(async (toolId: number) => {
-              const tool = await prisma.tool.findUnique({
-                where: { id: toolId },
-                select: { name: true },
-              });
-
-              if (!tool) {
-                throw new Error(`Tool ID ${toolId} not found.`);
-              }
-
-              return {
-                toolId, // Conecta ao ID da Tool
-                toolName: tool.name, // Usa o nome da Tool buscado
-                tagName: upcasedName, // Usa o nome da Tag
-              };
-            })
-          ),
-        },
+        ToolTags: toolTagsData.length ? { create: toolTagsData } : undefined,
       },
       include: {
         ToolTags: {
@@ -51,15 +54,15 @@ const createData = async (data: any) => {
     return {
       id: createdTag.id,
       name: createdTag.name,
-      tools: createdTag.ToolTags.map(toolTag => toolTag.tool),
+      tools: createdTag.ToolTags.map((toolTag) => toolTag.tool),
     };
   } catch (error: any) {
     if (error.code === "P2002" && error.meta?.target?.includes("name")) {
-      throw new Error("Couldnt create new tag, a tag with this name already exists");
+      throw new Error("Couldn't create new tag, a tag with this name already exists");
     }
-    throw new Error("Couldn't create new tag: " + error.message); // Mensagem com o erro original
+    throw new Error("Couldn't create new tag: " + error.message);
   }
-};
+}
 
 export async function POST(request: NextRequest) {
 
