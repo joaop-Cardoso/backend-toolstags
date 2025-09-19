@@ -1,6 +1,6 @@
 # 🚀 API com Autenticação JWT, Prisma e Zod
 
-Este projeto é uma API construída com **Next.js**, **Prisma ORM** e **Zod**, que oferece autenticação via JWT, persistência de sessão e operações CRUD.  
+Este projeto é um estudo prático; Se trata de uma API construída com **Next.js**, **Prisma ORM** e **Zod**, que oferece autenticação via JWT, persistência de sessão e operações CRUD.  
 
 ## ✨ Funcionalidades
 - 🔑 **Autenticação com JWT**
